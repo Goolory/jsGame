@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>game</title>
+	<style>
+		#id-canvas {
+			border: 1px solid #000;
+		}
+	</style>
+</head>
+<body>
+<canvas id="id-canvas" width="400" height="300"></canvas>
+<script>
+	var log = console.log.bind('console')
+
+	var GamePanel = function(){
+		var o = {
+			keydowns: {},
+			actions: {},
+		}
+		var canvas = document.getElementById('id-canvas');
+		var context = canvas.getContext('2d');
+		o.context = context;
+		o.drawImage = function(pic) {
+			o.context.drawImage(pic.img, pic.x, pic.y)
+		}
+		o.rest = function(key, callback){
+			o.actions[key] = callback
+		}
+
+		window.addEventListener('keydown', function(event){
+			o.keydowns[event.key] = true
+		})
+
+		window.addEventListener('keyup', function(event){
+			o.keydowns[event.key] = false
+		})
+
+
+		setInterval(function(){
+			var actions = Object.keys(o.actions)
+			for (var i = 0; i < actions.length; i++) {
+				var key = actions[i]
+				if (o.keydowns[key]) {
+					o.actions[key]()
+				}
+			}
+			o.update()
+			o.context.clearRect(0, 0, canvas.width, canvas.height);
+			o.draw()
+		}, 1000/30)
+		return o;
+
+	}
+
+	var loadImg = function(path) {
+		var img = new Image();
+		img.src = path
+		return img
+	}
+	var Ban = function(){
+		var img = loadImg('bp.png')
+		var o = {
+			x: 150,
+			y: 250,
+			img: img,
+			speed: 10,
+		}
+		o.moveL = function(){
+			o.x -= o.speed
+			if (o.x < 0) {
+				o.x = 0
+			}
+		}
+		o.moveR = function(){
+			o.x += o.speed
+			if (o.x > 400 - o.img.width) {
+				o.x = 400 - o.img.width
+			}
+		}
+		return o
+	}
+
+	var Ball = function(){
+		var img = loadImg('bill.png')
+		var o = {
+			x: 200,
+			y: 150,
+			img: img,
+			fired: false,
+			speedX: 5,
+			speedY: 5,
+		}
+
+		o.fire = function(){
+			o.fired = true;
+		}
+
+		o.move = function(){
+			if (o.fired) {
+				if (o.x > 400 - o.img.width || o.x < 0) {
+					o.speedX = -o.speedX
+				}
+				if (o.y < 0 || o.y > 300 - img.height) {
+					o.speedY = -o.speedY
+				}
+
+				o.x += o.speedX
+				o.y += o.speedY
+			}
+		}
+
+		o.fanY = function(){
+			o.speedY = -o.speedY
+		}
+
+		o.fanX = function(){
+			o.speedX = -o.speedX
+		}
+
+		o.boom = function(ob) {
+			log(boomW(o, ob) || boomW(ob, o))
+			if (boomW(o, ob) || boomW(ob, o)) {
+				o.fanY()
+			}
+		}
+
+		return o
+	}
+
+	var boomW = function(o1, o2){
+		log(o1.y + o1.img.height)
+		log(o2.y)
+		log((o1.y + o1.img.height) == o2.y)
+		if (((o1.y + o1.img.height) == o2.y)&&((o1.x <= o2.x && o2.x <= (o1.x + o1.img.width)) || o2.x <= o1.x && o1.x <= (o2.x + o2.img.width))){
+			return true
+		}
+		return false
+	}
+
+	var Black = function(x, y){
+		var img = loadImg('black.png')
+		var o = {
+			x: x,
+			y: y,
+			img: img,
+			alive: true,
+		}
+
+
+		return o
+	}
+
+
+	var _main = function(){
+		var gamePanel = GamePanel()
+		var ban = Ban()
+		var ball = Ball()
+
+		gamePanel.rest('a', function(){
+			ban.moveL()
+		})
+
+		gamePanel.rest('d', function(){
+			ban.moveR()
+		})
+
+		gamePanel.rest('f', function(){
+			ball.fire()
+		})
+
+		gamePanel.update = function(){
+			ball.move()
+			ball.boom(ban)
+		}
+
+		gamePanel.draw = function(){
+			gamePanel.drawImage(ban)
+			gamePanel.drawImage(ball)
+		}
+
+	}
+	_main()
+
+</script>
+</body>
+</html>
